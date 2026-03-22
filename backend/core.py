@@ -1,5 +1,6 @@
 from typing import Any, Dict
-
+import os
+from google import genai
 from dotenv import load_dotenv
 from langchain.agents import create_agent
 from langchain.chat_models import init_chat_model
@@ -7,18 +8,26 @@ from langchain.messages import ToolMessage
 from langchain.tools import tool
 from langchain_pinecone import PineconeVectorStore
 from langchain_openai import OpenAIEmbeddings
+from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings
 
 load_dotenv()
 
 # Initialize embeddings (same as ingestion.py)
-embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
-
+client = genai.Client(api_key=os.getenv("GOOGLE_API_KEY"))
+embeddings = GoogleGenerativeAIEmbeddings(
+    model="gemini-embedding-001", # This is the most reliable "alias"
+    google_api_key=os.environ.get("GOOGLE_API_KEY"),
+    output_dimensionality=1536,
+    show_progress_bar=False,
+    chunk_size=50,
+    retry_min_seconds=10
+)
 #Initialize vector store
 vectorstore = PineconeVectorStore(
     index_name="langchain-docs-2026", embedding=embeddings
 )
 # Initialize chat model
-model = init_chat_model("gpt-5.2", model_provider="openai")
+model = init_chat_model("gemini-1.5", model_provider="google_genai")
 
 
 @tool(response_format="content_and_artifact")
